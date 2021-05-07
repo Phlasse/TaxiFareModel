@@ -85,7 +85,7 @@ BUCKET_NAME=wagon-ml-zastrow-566
 REGION=europe-west1
 
 # path of the file to upload to gcp (the path of the file should be absolute or should match the directory where the make command is run)
-LOCAL_PATH="raw_data/train_1k.csv" # Replace with your local path to the `train_1k.csv` and make sure to put it between quotes
+LOCAL_PATH="raw_data/train.csv" # Replace with your local path to the `train_1k.csv` and make sure to put it between quotes
 
 # bucket directory in which to store the uploaded file (we choose to name this data as a convention)
 BUCKET_FOLDER=data
