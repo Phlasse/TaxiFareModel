@@ -32,6 +32,10 @@ from tempfile import mkdtemp
 MLFLOW_URI = "https://mlflow.lewagon.co/"
 myname = "Phillip"
 EXPERIMENT_NAME = f"[Fed-up!] TaxifareModel_{myname}"
+BUCKET_NAME = 'wagon-ml-zastrow-566'
+BUCKET_TRAIN_DATA_PATH = 'data/train_1k.csv'
+MODEL_NAME = 'taxifare'
+MODEL_VERSION = 'v1'
 
 class Trainer(object):
 
@@ -217,7 +221,7 @@ if __name__ == "__main__":
         print(colored("Please define MlFlow experiment variable with your own name", "red"))
     is_4_kaggle = True
     if is_4_kaggle:
-        params = dict(nrows=200000, # number of samples
+        params = dict(nrows=500000, # number of samples
               local=False,  # set to False to get data from aws
               optimize=True,
               estimator="xgboost",
