@@ -10,7 +10,7 @@ pandas==1.2.3
 scikit-learn==0.24.1
 pygeohash
 category_encoders
-xgboost
+xgboost > 0.82
 
 # tests/linter
 black

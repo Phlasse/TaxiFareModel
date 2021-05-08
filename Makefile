@@ -105,7 +105,7 @@ REGION=europe-west1
 
 PYTHON_VERSION=3.7
 FRAMEWORK=scikit-learn
-RUNTIME_VERSION=1.15
+RUNTIME_VERSION=1.15 # 2.4 for xgboost?
 
 ##### Package params  - - - - - - - - - - - - - - - - - - -
 
