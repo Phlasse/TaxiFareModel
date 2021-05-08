@@ -24,15 +24,17 @@ class DistanceTransformer(BaseEstimator, TransformerMixin):
         return self
 
 class DataframeCleaner(BaseEstimator, TransformerMixin):
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+        
     def transform(self, X, y=None):
-        X = pd.DataFrame(X)
+        X = pd.DataFrame(X.toarray())
         assert isinstance(X, pd.DataFrame)
         X = df_optimized(X)
-        #if self.verbose:
-        #    print(X.head())
+        if self.verbose:
+            print(X.head())
         return X
+    
     def fit(self, X, y=None):
         return self
 

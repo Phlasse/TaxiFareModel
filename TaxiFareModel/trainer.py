@@ -94,13 +94,15 @@ class Trainer(object):
             }
             # 'max_depth' : [int(x) for x in np.linspace(10, 110, num = 11)]}
         elif estimator == "xgboost":
-            model = XGBRegressor(
-                objective="reg:squarederror",
-                n_jobs=-1,
-                max_depth=10,
-                learning_rate=0.05,
-                gamma=3,
-            )
+            model = XGBRegressor(objective='reg:squarederror', 
+                                 n_jobs=-1, 
+                                 max_depth=10, 
+                                 learning_rate=0.05,
+                                 gamma=3)
+            self.model_params = {'max_depth': range(10, 20, 2),
+                                 'n_estimators': range(60, 220, 40),
+                                 'learning_rate': [0.1, 0.01, 0.05]
+                                 }
         else:
             model = Lasso()
         estimator_params = self.kwargs.get("estimator_params", {})
@@ -154,7 +156,10 @@ class Trainer(object):
         )
 
         self.pipeline = Pipeline(
-            steps=[("features", features_encoder), ("df_clener", DataframeCleaner()),("rgs", self.get_estimator())],
+            steps=[
+                ("features", features_encoder), 
+                ("df_clener", DataframeCleaner(verbose=False)),
+                ("rgs", self.get_estimator())],
             memory=memory,
         )
 
