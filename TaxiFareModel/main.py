@@ -1,4 +1,4 @@
-from TaxiFareModel.data import get_data, clean_df
+from TaxiFareModel.data import get_data, clean_df, df_optimized
 from TaxiFareModel.predict import generate_submission_csv
 from TaxiFareModel.trainer import Trainer
 import warnings
@@ -14,7 +14,7 @@ params = dict(
     data_origin="gcp",  # Define the origin of the data "local", 'gcp', 'aws'
     is_4_kaggle=False,  # enable kaggle submit
     experiment="[Fed-up!]-Phi-TaxiFare",  # define experiment name for mlflo tracking
-    local=False,  # set to False to get data from aws
+    #local=False,  # set to False to get data from aws
     optimize=True,
     estimator="xgboost",
     mlflow=True,  # set to True to log params to mlflow
@@ -32,6 +32,7 @@ if __name__ == "__main__":
     print("############   Loading Data   ############")
     df = get_data(**params)
     df = clean_df(df)
+    df = df_optimized(df)
     y_train = df["fare_amount"]
     X_train = df.drop("fare_amount", axis=1)
     del df

@@ -23,6 +23,7 @@ from TaxiFareModel.encoders import (
     AddGeohash,
     Direction,
     DistanceToCenter,
+    DataframeCleaner,
 )
 from TaxiFareModel.utils import compute_rmse, simple_time_tracker
 
@@ -153,7 +154,7 @@ class Trainer(object):
         )
 
         self.pipeline = Pipeline(
-            steps=[("features", features_encoder), ("rgs", self.get_estimator())],
+            steps=[("features", features_encoder), ("df_clener", DataframeCleaner()),("rgs", self.get_estimator())],
             memory=memory,
         )
 

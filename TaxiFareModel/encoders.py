@@ -3,7 +3,7 @@ import pygeohash as gh
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from TaxiFareModel.utils import haversine_vectorized, minkowski_distance
-from TaxiFareModel.data import get_data, clean_df, DIST_ARGS
+from TaxiFareModel.data import get_data, clean_df, DIST_ARGS, df_optimized
 
 
 class DistanceTransformer(BaseEstimator, TransformerMixin):
@@ -23,6 +23,18 @@ class DistanceTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
 
+class DataframeCleaner(BaseEstimator, TransformerMixin):
+    def __init__(self, **kwargs):
+        pass
+    def transform(self, X, y=None):
+        X = pd.DataFrame(X)
+        assert isinstance(X, pd.DataFrame)
+        X = df_optimized(X)
+        #if self.verbose:
+        #    print(X.head())
+        return X
+    def fit(self, X, y=None):
+        return self
 
 class TimeFeaturesEncoder(BaseEstimator, TransformerMixin):
     def __init__(self, time_column, time_zone_name="America/New_York"):
