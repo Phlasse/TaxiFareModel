@@ -70,7 +70,7 @@ pylint:
 # ----------------------------------
 
 run_locally:
-	@python -W ignore -m TaxiFareModel.trainer
+	@python -W ignore -m TaxiFareModel.main
 
 # ----------------------------------
 #            GCP Setup
@@ -90,9 +90,34 @@ LOCAL_PATH="raw_data/train.csv" # Replace with your local path to the `train_1k.
 # bucket directory in which to store the uploaded file (we choose to name this data as a convention)
 BUCKET_FOLDER=data
 
+# will store the packages uploaded to GCP for the training
+BUCKET_TRAINING_FOLDER = 'trainings'
+
 # name for the uploaded file inside the bucket folder (here we choose to keep the name of the uploaded file)
 # BUCKET_FILE_NAME=another_file_name_if_I_so_desire.csv
 BUCKET_FILE_NAME=$(shell basename ${LOCAL_PATH})
+
+### GCP AI Platform - - - - - - - - - - - - - - - - - - - -
+
+##### Machine configuration - - - - - - - - - - - - - - - -
+
+REGION=europe-west1
+
+PYTHON_VERSION=3.7
+FRAMEWORK=scikit-learn
+RUNTIME_VERSION=1.15
+
+##### Package params  - - - - - - - - - - - - - - - - - - -
+
+PACKAGE_NAME=TaxiFareModel
+FILENAME=main
+
+##### Job - - - - - - - - - - - - - - - - - - - - - - - - -
+
+JOB_NAME=taxi_fare_training_pipeline_$(shell date +'%Y%m%d_%H%M%S')
+
+###### machine type
+MACHINE-TYPE=n1-standard-16
 
 set_project:
 	@gcloud config set project ${PROJECT_ID}
@@ -103,3 +128,14 @@ create_bucket:
 upload_data:
 	# @gsutil cp train_1k.csv gs://wagon-ml-my-bucket-name/data/train_1k.csv
 	@gsutil cp ${LOCAL_PATH} gs://${BUCKET_NAME}/${BUCKET_FOLDER}/${BUCKET_FILE_NAME}
+
+gcp_submit_training:
+	gcloud ai-platform jobs submit training ${JOB_NAME} \
+		--job-dir gs://${BUCKET_NAME}/${BUCKET_TRAINING_FOLDER} \
+		--package-path ${PACKAGE_NAME} \
+		--module-name ${PACKAGE_NAME}.${FILENAME} \
+		--python-version=${PYTHON_VERSION} \
+		--runtime-version=${RUNTIME_VERSION} \
+		--region ${REGION} \
+		--stream-logs \
+		--master-machine-type=${MACHINE_TYPE}

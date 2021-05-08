@@ -17,8 +17,13 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.linear_model import SGDRegressor
 
 from TaxiFareModel.data import get_data, clean_df, DIST_ARGS
-from TaxiFareModel.encoders import TimeFeaturesEncoder, DistanceTransformer, AddGeohash, Direction, \
-    DistanceToCenter
+from TaxiFareModel.encoders import (
+    TimeFeaturesEncoder,
+    DistanceTransformer,
+    AddGeohash,
+    Direction,
+    DistanceToCenter,
+)
 from TaxiFareModel.utils import compute_rmse, simple_time_tracker
 
 from mlflow.tracking import MlflowClient
@@ -27,29 +32,33 @@ from psutil import virtual_memory
 from termcolor import colored
 from xgboost import XGBRegressor
 from tempfile import mkdtemp
+from google.cloud import storage
 
 
 MLFLOW_URI = "https://mlflow.lewagon.co/"
 myname = "Phillip"
 EXPERIMENT_NAME = f"[Fed-up!] TaxifareModel_{myname}"
-BUCKET_NAME = 'wagon-ml-zastrow-566'
-BUCKET_TRAIN_DATA_PATH = 'data/train_1k.csv'
-MODEL_NAME = 'taxifare'
-MODEL_VERSION = 'v1'
+BUCKET_NAME = "wagon-ml-zastrow-566"
+BUCKET_TRAIN_DATA_PATH = "data/train_1k.csv"
+MODEL_NAME = "taxifare"
+MODEL_VERSION = "v1"
+STORAGE_LOCATION = "models/taxifare/model.joblib"
+
 
 class Trainer(object):
-
     def __init__(self, X, y, **kwargs):
         """
-            X: pandas DataFrame
-            y: pandas Series
+        X: pandas DataFrame
+        y: pandas Series
         """
         self.pipeline = None
         self.kwargs = kwargs
         self.local = kwargs.get("local", False)  # if True training is done locally
         self.mlflow = kwargs.get("mlflow", False)  # if True log info to nlflow
-        self.split = self.kwargs.get("split", True)  
-        self.experiment_name = kwargs.get("experiment_name", EXPERIMENT_NAME)  # cf doc above
+        self.split = self.kwargs.get("split", True)
+        self.experiment_name = kwargs.get(
+            "experiment_name", EXPERIMENT_NAME
+        )  # cf doc above
         self.model_params = None
         self.X_train = X
         self.y_train = y
@@ -57,10 +66,13 @@ class Trainer(object):
         del X, y
         self.split = self.kwargs.get("split", True)  # cf doc above
         if self.split:
-            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(self.X_train, self.y_train, test_size=0.15)
+            self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(
+                self.X_train, self.y_train, test_size=0.15
+            )
         self.nrows = self.X_train.shape[0]  # nb of rows to train on
         self.log_kwargs_params()
         self.log_machine_specs()
+        self.model_upload = kwargs.get("model_upload", False)
 
     def get_estimator(self):
         estimator = self.kwargs.get("estimator", self.ESTIMATOR)
@@ -77,11 +89,17 @@ class Trainer(object):
         elif estimator == "RandomForest":
             model = RandomForestRegressor()
             self.model_params = {  # 'n_estimators': [int(x) for x in np.linspace(start = 50, stop = 200, num = 10)],
-                'max_features': ['auto', 'sqrt']}
+                "max_features": ["auto", "sqrt"]
+            }
             # 'max_depth' : [int(x) for x in np.linspace(10, 110, num = 11)]}
         elif estimator == "xgboost":
-            model = XGBRegressor(objective='reg:squarederror', n_jobs=-1, max_depth=10, learning_rate=0.05,
-                                 gamma=3)
+            model = XGBRegressor(
+                objective="reg:squarederror",
+                n_jobs=-1,
+                max_depth=10,
+                learning_rate=0.05,
+                gamma=3,
+            )
         else:
             model = Lasso()
         estimator_params = self.kwargs.get("estimator_params", {})
@@ -95,47 +113,50 @@ class Trainer(object):
         dist = self.kwargs.get("distance_type", "euclidian")
         feateng_steps = self.kwargs.get("feateng", ["distance", "time_features"])
         if memory:
-             memory = mkdtemp()
-        
-        time_pipe = Pipeline([
-            ('time_enc', TimeFeaturesEncoder('pickup_datetime')),
-            ('ohe', OneHotEncoder(handle_unknown='ignore'))
-        ])
-        dist_pipe = Pipeline([
-            ('dist_trans', DistanceTransformer(distance_type=dist, **DIST_ARGS)),
-            ('stdscaler', StandardScaler())
-        ])
-        center_pipe = Pipeline([
-            ("distance_center", DistanceToCenter()),
-            ('stdscaler', StandardScaler()) 
-        ])
-        geohash_pipe = Pipeline([
-            ("deohash_add", AddGeohash()),
-            ("hash_encode", ce.HashingEncoder())
-        ])
-        direction_pipe = Pipeline([
-            ("direction_add", Direction()), 
-            ('stdscaler', StandardScaler()) 
-        ])
+            memory = mkdtemp()
 
-        
+        time_pipe = Pipeline(
+            [
+                ("time_enc", TimeFeaturesEncoder("pickup_datetime")),
+                ("ohe", OneHotEncoder(handle_unknown="ignore")),
+            ]
+        )
+        dist_pipe = Pipeline(
+            [
+                ("dist_trans", DistanceTransformer(distance_type=dist, **DIST_ARGS)),
+                ("stdscaler", StandardScaler()),
+            ]
+        )
+        center_pipe = Pipeline(
+            [("distance_center", DistanceToCenter()), ("stdscaler", StandardScaler())]
+        )
+        geohash_pipe = Pipeline(
+            [("deohash_add", AddGeohash()), ("hash_encode", ce.HashingEncoder())]
+        )
+        direction_pipe = Pipeline(
+            [("direction_add", Direction()), ("stdscaler", StandardScaler())]
+        )
+
         feateng_blocks = [
-            ('distance', dist_pipe, list(DIST_ARGS.values())),
-            ('time_features', time_pipe, ['pickup_datetime']),
-            ('geohash', geohash_pipe, list(DIST_ARGS.values())),
-            ('direction', direction_pipe, list(DIST_ARGS.values())),
-            ('distance_to_center', center_pipe, list(DIST_ARGS.values())),
+            ("distance", dist_pipe, list(DIST_ARGS.values())),
+            ("time_features", time_pipe, ["pickup_datetime"]),
+            ("geohash", geohash_pipe, list(DIST_ARGS.values())),
+            ("direction", direction_pipe, list(DIST_ARGS.values())),
+            ("distance_to_center", center_pipe, list(DIST_ARGS.values())),
         ]
         for bloc in feateng_blocks:
             if bloc[0] not in feateng_steps:
                 feateng_blocks.remove(bloc)
-        
-        features_encoder = ColumnTransformer(feateng_blocks, n_jobs=None, remainder="drop")
-        
-        self.pipeline = Pipeline(steps=[
-                    ('features', features_encoder),
-                    ('rgs', self.get_estimator())],
-                                 memory=memory)
+
+        features_encoder = ColumnTransformer(
+            feateng_blocks, n_jobs=None, remainder="drop"
+        )
+
+        self.pipeline = Pipeline(
+            steps=[("features", features_encoder), ("rgs", self.get_estimator())],
+            memory=memory,
+        )
+
     @simple_time_tracker
     def train(self):
         tic = time.time()
@@ -150,7 +171,12 @@ class Trainer(object):
         if self.split:
             rmse_val = self.compute_rmse(self.X_val, self.y_val, show=True)
             self.mlflow_log_metric("rmse_val", rmse_val)
-            print(colored("rmse train: {} || rmse val: {}".format(rmse_train, rmse_val), "blue"))
+            print(
+                colored(
+                    "rmse train: {} || rmse val: {}".format(rmse_train, rmse_val),
+                    "blue",
+                )
+            )
         else:
             print(colored("rmse train: {}".format(rmse_train), "blue"))
 
@@ -167,8 +193,21 @@ class Trainer(object):
 
     def save_model(self):
         """Save the model into a .joblib format"""
-        joblib.dump(self.pipeline, 'model.joblib')
+        joblib.dump(self.pipeline, "model.joblib")
+        print(self.model_upload)
         print(colored("model.joblib saved locally", "green"))
+        if self.model_upload:
+            print("uploading to gcp")
+            self.upload_model_to_gcp()
+            print(
+                f"uploaded model.joblib to gcp cloud storage under \n => {STORAGE_LOCATION}"
+            )
+
+    def upload_model_to_gcp(self):
+        client = storage.Client()
+        bucket = client.bucket(BUCKET_NAME)
+        blob = bucket.blob(STORAGE_LOCATION)
+        blob.upload_from_filename("model.joblib")
 
     @memoized_property
     def mlflow_client(self):
@@ -180,7 +219,9 @@ class Trainer(object):
         try:
             return self.mlflow_client.create_experiment(self.experiment_name)
         except BaseException:
-            return self.mlflow_client.get_experiment_by_name(self.experiment_name).experiment_id
+            return self.mlflow_client.get_experiment_by_name(
+                self.experiment_name
+            ).experiment_id
 
     @memoized_property
     def mlflow_run(self):
@@ -196,7 +237,7 @@ class Trainer(object):
 
     def log_estimator_params(self):
         reg = self.get_estimator()
-        self.mlflow_log_param('estimator_name', reg.__class__.__name__)
+        self.mlflow_log_param("estimator_name", reg.__class__.__name__)
         params = reg.get_params()
         for k, v in params.items():
             self.mlflow_log_param(k, v)
@@ -213,23 +254,36 @@ class Trainer(object):
         self.mlflow_log_param("ram", ram)
         self.mlflow_log_param("cpus", cpus)
 
+
 if __name__ == "__main__":
-    warnings.simplefilter(action='ignore', category=FutureWarning)
+    warnings.simplefilter(action="ignore", category=FutureWarning)
     # Get and clean data
     experiment = "[Fed-up!]-Phi-TaxiFare"
     if "YOURNAME" in experiment:
-        print(colored("Please define MlFlow experiment variable with your own name", "red"))
+        print(
+            colored(
+                "Please define MlFlow experiment variable with your own name", "red"
+            )
+        )
     is_4_kaggle = True
     if is_4_kaggle:
-        params = dict(nrows=500000, # number of samples
-              local=False,  # set to False to get data from aws
-              optimize=True,
-              estimator="xgboost",
-              mlflow=True,  # set to True to log params to mlflow
-              experiment_name=experiment,
-              pipeline_memory=None,
-              distance_type="manhattan",
-              feateng=["distance_to_center", "direction", "distance", "time_features", "geohash"])
+        params = dict(
+            nrows=500000,  # number of samples
+            local=False,  # set to False to get data from aws
+            optimize=True,
+            estimator="xgboost",
+            mlflow=True,  # set to True to log params to mlflow
+            experiment_name=experiment,
+            pipeline_memory=None,
+            distance_type="manhattan",
+            feateng=[
+                "distance_to_center",
+                "direction",
+                "distance",
+                "time_features",
+                "geohash",
+            ],
+        )
         print("############   Loading Data   ############")
         df = get_data(**params)
         df = clean_df(df)
@@ -248,19 +302,35 @@ if __name__ == "__main__":
         print(colored("############   Saving model    ############", "green"))
         t.save_model()
     else:
-        estimators = ["GBM","RandomForestRegressor", "Lasso", "Ridge", "LinearRegression", "xgboost", "SGDRegressor"]
+        estimators = [
+            "GBM",
+            "RandomForestRegressor",
+            "Lasso",
+            "Ridge",
+            "LinearRegression",
+            "xgboost",
+            "SGDRegressor",
+        ]
         dists = ["haversine", "manhattan", "euclidian"]
         for estimator in estimators:
             for disti in dists:
-                params = dict(nrows=100,
-                            local=False,  # set to False to get data from GCP (Storage or BigQuery)
-                            optimize=True,
-                            estimator=estimator,
-                            mlflow=True,  # set to True to log params to mlflow
-                            experiment_name=experiment,
-                            pipeline_memory=None,
-                            distance_type=disti,
-                            feateng=["distance_to_center", "direction", "distance", "time_features", "geohash"])
+                params = dict(
+                    nrows=100,
+                    local=False,  # set to False to get data from GCP (Storage or BigQuery)
+                    optimize=True,
+                    estimator=estimator,
+                    mlflow=True,  # set to True to log params to mlflow
+                    experiment_name=experiment,
+                    pipeline_memory=None,
+                    distance_type=disti,
+                    feateng=[
+                        "distance_to_center",
+                        "direction",
+                        "distance",
+                        "time_features",
+                        "geohash",
+                    ],
+                )
                 print("############   Loading Data   ############")
                 df = get_data(**params)
                 df = clean_df(df)

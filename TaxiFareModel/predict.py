@@ -5,8 +5,12 @@ import joblib
 import pandas as pd
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from google.cloud import storage
 
-PATH_TO_LOCAL_MODEL = 'model.joblib'
+
+PATH_TO_LOCAL_MODEL = "model.joblib"
+BUCKET_NAME = "wagon-ml-zastrow-566"
+
 
 def get_test_data():
     """method to get the training data (or a portion of it) from google cloud bucket
@@ -22,16 +26,33 @@ def get_model(path_to_joblib):
     return pipeline
 
 
+def download_model(model_directory="PipelineTest", bucket=BUCKET_NAME, rm=True):
+    client = storage.Client().bucket(bucket)
+    storage_location = "models/taxifare/model.joblib"
+    # storage_location = 'models/{}/versions/{}/{}'.format(
+    #    MODEL_NAME,
+    #    model_directory,
+    #    'model.joblib')
+    blob = client.blob(storage_location)
+    blob.download_to_filename("model.joblib")
+    print("=> pipeline downloaded from storage")
+    model = joblib.load("model.joblib")
+    if rm:
+        os.remove("model.joblib")
+    return model
+
+
 def evaluate_model(y, y_pred):
     MAE = round(mean_absolute_error(y, y_pred), 2)
     RMSE = round(sqrt(mean_squared_error(y, y_pred)), 2)
-    res = {'MAE': MAE, 'RMSE': RMSE}
+    res = {"MAE": MAE, "RMSE": RMSE}
     return res
 
 
 def generate_submission_csv(kaggle_upload=False):
     df_test = get_test_data()
-    pipeline = joblib.load(PATH_TO_LOCAL_MODEL)
+    # pipeline = joblib.load(PATH_TO_LOCAL_MODEL)
+    pipeline = download_model()
     if "best_estimator_" in dir(pipeline):
         y_pred = pipeline.best_estimator_.predict(df_test)
     else:
@@ -48,6 +69,5 @@ def generate_submission_csv(kaggle_upload=False):
         os.system(command)
 
 
-if __name__ == '__main__':
-    generate_submission_csv(kaggle_upload=True)
-
+if __name__ == "__main__":
+    generate_submission_csv(kaggle_upload=False)
