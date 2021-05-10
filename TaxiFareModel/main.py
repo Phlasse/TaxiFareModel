@@ -10,11 +10,12 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 # Config 4 run
 ####################
 params = dict(
-    nrows=1000000,  # number of samples
+    nrows=10000000,  # number of samples
     data_origin="gcp",  # Define the origin of the data "local", 'gcp', 'aws'
     is_4_kaggle=False,  # enable kaggle submit
     experiment="[Fed-up!]-Phi-TaxiFare",  # define experiment name for mlflo tracking
     #local=False,  # set to False to get data from aws
+    final_model=True,
     optimize=True,
     estimator="xgboost",
     mlflow=True,  # set to True to log params to mlflow
@@ -58,17 +59,17 @@ if __name__ == "__main__":
     else:
         estimators = [
             "GBM" ,
-            "RandomForestRegressor", 
-            "Lasso", 
-            "Ridge", 
-            "LinearRegression", 
-            "xgboost", 
-            "SGDRegressor"
+#            "RandomForestRegressor", 
+#            "Lasso", 
+#            "Ridge", 
+#            "LinearRegression", 
+#            "xgboost", 
+#            "SGDRegressor"
             ]
         dists = [
-            "haversine", 
+#            "haversine", 
             "manhattan", 
-            "euclidian"
+#            "euclidian"
             ]
         for estimator in estimators:
             for disti in dists:

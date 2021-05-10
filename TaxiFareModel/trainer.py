@@ -64,6 +64,7 @@ class Trainer(object):
         self.X_train = X
         self.y_train = y
         self.ESTIMATOR = "linear"
+        self.final_model = kwargs.get("final_model", False)  # final model for production?
         del X, y
         self.split = self.kwargs.get("split", True)  # cf doc above
         if self.split:
@@ -199,6 +200,10 @@ class Trainer(object):
 
     def save_model(self):
         """Save the model into a .joblib format"""
+        if self.final_model:
+            self.storage_loc = "models/taxifare/final_model.joblib"
+        else:
+            self.storage_loc = STORAGE_LOCATION
         joblib.dump(self.pipeline, "model.joblib")
         print(self.model_upload)
         print(colored("model.joblib saved locally", "green"))
@@ -206,13 +211,13 @@ class Trainer(object):
             print("uploading to gcp")
             self.upload_model_to_gcp()
             print(
-                f"uploaded model.joblib to gcp cloud storage under \n => {STORAGE_LOCATION}"
+                f"uploaded model.joblib to gcp cloud storage under \n => {self.storage_loc}"
             )
 
     def upload_model_to_gcp(self):
         client = storage.Client()
         bucket = client.bucket(BUCKET_NAME)
-        blob = bucket.blob(STORAGE_LOCATION)
+        blob = bucket.blob(self.storage_loc)
         blob.upload_from_filename("model.joblib")
 
     @memoized_property

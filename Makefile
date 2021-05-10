@@ -105,7 +105,7 @@ REGION=europe-west1
 
 PYTHON_VERSION=3.7
 FRAMEWORK=scikit-learn
-RUNTIME_VERSION=1.15 # 2.4 for xgboost?
+RUNTIME_VERSION=1.15
 
 ##### Package params  - - - - - - - - - - - - - - - - - - -
 
@@ -139,3 +139,6 @@ gcp_submit_training:
 		--region ${REGION} \
 		--stream-logs \
 		--master-machine-type=${MACHINE_TYPE}
+
+run_api:
+	uvicorn api.fast:app --reload  # load web server with code autoreload
