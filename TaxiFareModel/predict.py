@@ -26,9 +26,9 @@ def get_model(path_to_joblib):
     return pipeline
 
 
-def download_model(model_directory="PipelineTest", bucket=BUCKET_NAME, rm=True):
+def download_model(model_directory="PipelineTest", bucket=BUCKET_NAME, rm=False):
     client = storage.Client().bucket(bucket)
-    storage_location = "models/taxifare/model.joblib"
+    storage_location = "models/taxifare/final_model.joblib"
     # storage_location = 'models/{}/versions/{}/{}'.format(
     #    MODEL_NAME,
     #    model_directory,

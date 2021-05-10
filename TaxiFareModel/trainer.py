@@ -90,10 +90,9 @@ class Trainer(object):
             model = GradientBoostingRegressor()
         elif estimator == "RandomForest":
             model = RandomForestRegressor()
-            self.model_params = {  # 'n_estimators': [int(x) for x in np.linspace(start = 50, stop = 200, num = 10)],
+            self.model_params = {  
                 "max_features": ["auto", "sqrt"]
             }
-            # 'max_depth' : [int(x) for x in np.linspace(10, 110, num = 11)]}
         elif estimator == "xgboost":
             model = XGBRegressor(objective='reg:squarederror', 
                                  n_jobs=-1, 
@@ -118,7 +117,6 @@ class Trainer(object):
         feateng_steps = self.kwargs.get("feateng", ["distance", "time_features"])
         if memory:
             memory = mkdtemp()
-
         time_pipe = Pipeline(
             [
                 ("time_enc", TimeFeaturesEncoder("pickup_datetime")),
@@ -140,7 +138,6 @@ class Trainer(object):
         direction_pipe = Pipeline(
             [("direction_add", Direction()), ("stdscaler", StandardScaler())]
         )
-
         feateng_blocks = [
             ("distance", dist_pipe, list(DIST_ARGS.values())),
             ("time_features", time_pipe, ["pickup_datetime"]),
@@ -155,7 +152,6 @@ class Trainer(object):
         features_encoder = ColumnTransformer(
             feateng_blocks, n_jobs=None, remainder="drop"
         )
-
         self.pipeline = Pipeline(
             steps=[
                 ("features", features_encoder), 

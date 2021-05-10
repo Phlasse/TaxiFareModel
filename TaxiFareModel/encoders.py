@@ -66,6 +66,7 @@ class AddGeohash(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
+        print("geo")
         assert isinstance(X, pd.DataFrame)
         X_ = X.copy()
         X_["geohash_pickup"] = X_.apply(
@@ -74,12 +75,14 @@ class AddGeohash(BaseEstimator, TransformerMixin):
             ),
             axis=1,
         )
+        print("geo inbetween")
         X_["geohash_dropoff"] = X_.apply(
             lambda x: gh.encode(
                 x.dropoff_latitude, x.dropoff_longitude, precision=self.precision
             ),
             axis=1,
         )
+        print(X_.head(1))
         return X_[["geohash_pickup", "geohash_dropoff"]]
 
 

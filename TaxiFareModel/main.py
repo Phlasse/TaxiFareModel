@@ -10,7 +10,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 # Config 4 run
 ####################
 params = dict(
-    nrows=10000000,  # number of samples
+    nrows=30000000,  # number of samples
     data_origin="gcp",  # Define the origin of the data "local", 'gcp', 'aws'
     is_4_kaggle=False,  # enable kaggle submit
     experiment="[Fed-up!]-Phi-TaxiFare",  # define experiment name for mlflo tracking

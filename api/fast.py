@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from TaxiFareModel.predict import download_model
+import pandas as pd
+
+
+
 
 app = FastAPI()
 
@@ -37,7 +41,7 @@ def create_fare(
 
     # build X ⚠️ beware to the order of the parameters ⚠️
     
-    
+    print(pickup_longitude)
     X = pd.DataFrame(dict(
         key=[key],
         pickup_datetime=[pickup_datetime],
@@ -46,9 +50,9 @@ def create_fare(
         dropoff_longitude=[float(dropoff_longitude)],
         dropoff_latitude=[float(dropoff_latitude)],
         passenger_count=[int(passenger_count)]))
-    
+        
+    #pipeline = joblib.load("model.joblib")
     pipline = download_model()
-    results = pipline.predict(X)
-    pred = float(results[0])
-    return dict(
-        prediction=pred)
+    pred = pipeline.predict(X)
+    fare_amount = float(pred[0])
+    return {"fare_amount" : fare_amount}

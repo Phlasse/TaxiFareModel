@@ -24,6 +24,7 @@ gcsfs==0.8.0
 google-cloud-storage==1.37.1
 mlflow
 s3fs
+fastapi
 
 # utilities
 six>=1.14
@@ -31,3 +32,4 @@ joblib
 memoized-property
 termcolor
 psutil
+uvicorn

@@ -37,6 +37,7 @@ def get_data(nrows=10000, **kwargs):
 
 
 def clean_df(df, test=False):
+    print(df)
     df = df.dropna(how="any", axis="rows")
     df = df[(df.dropoff_latitude != 0) | (df.dropoff_longitude != 0)]
     df = df[(df.pickup_latitude != 0) | (df.pickup_longitude != 0)]
@@ -44,10 +45,15 @@ def clean_df(df, test=False):
         df = df[df.fare_amount.between(0, 4000)]
     df = df[df.passenger_count < 8]
     df = df[df.passenger_count >= 0]
+    print(df)
+
     df = df[df["pickup_latitude"].between(left=40, right=42)]
     df = df[df["pickup_longitude"].between(left=-74.3, right=-72.9)]
+    print(df)
+
     df = df[df["dropoff_latitude"].between(left=40, right=42)]
     df = df[df["dropoff_longitude"].between(left=-74, right=-72.9)]
+    print(df)
     return df
 
 def df_optimized(df, verbose=True, **kwargs):
