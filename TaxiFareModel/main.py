@@ -21,7 +21,7 @@ params = dict(
     mlflow=True,  # set to True to log params to mlflow
     experiment_name="[Fed-up!]-Phi-TaxiFare",
     pipeline_memory=None,
-    model_upload=True,  # for automatic upload to gcp
+    model_upload=False,  # for automatic upload to gcp
     distance_type="manhattan",
     feateng=["distance_to_center", "direction", "distance", "time_features", "geohash"],
 )

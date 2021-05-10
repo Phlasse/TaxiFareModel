@@ -141,7 +141,7 @@ class Trainer(object):
         feateng_blocks = [
             ("distance", dist_pipe, list(DIST_ARGS.values())),
             ("time_features", time_pipe, ["pickup_datetime"]),
-            ("geohash", geohash_pipe, list(DIST_ARGS.values())),
+            #("geohash", geohash_pipe, list(DIST_ARGS.values())),
             ("direction", direction_pipe, list(DIST_ARGS.values())),
             ("distance_to_center", center_pipe, list(DIST_ARGS.values())),
         ]
